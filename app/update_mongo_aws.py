@@ -4,6 +4,8 @@ import re
 import logging
 
 import boto3
+import matplotlib
+matplotlib.use('Agg')
 
 import sys; sys.path.append('../')
 import gcmt_utils as gc
@@ -109,8 +111,11 @@ def update_mongo_aws():
                 new_event_counter += 1
                 logging.info('doing BB {} / {}'.format(new_event_counter,
                                                        len(aws_need_bbs)))
-                gc.make_beachball(event, directory='bbs')
-                gc.resize_bb_file(event, directory='bbs')
+                try:
+                    gc.make_beachball(event, directory='bbs')
+                    gc.resize_bb_file(event, directory='bbs')
+                except Exception as e:
+                    logging.exception(e)
                 try:
                     logging.info('uploading {}'.format(event.Event))
                     upload_bb(event=event, client=aws_client, directory='bbs',
@@ -123,7 +128,7 @@ def update_mongo_aws():
     else:
         logging.info('no new BBs needed')
 
-
+    logging.info('\n Done with updating!\n\n')
 
 if __name__ == '__main__':
     update_mongo_aws()

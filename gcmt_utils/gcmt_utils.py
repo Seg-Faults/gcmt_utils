@@ -6,6 +6,7 @@ import PIL
 from PIL import Image, ImageChops
 import pandas as pd
 import numpy as np
+
 import matplotlib.pyplot as plt
 
 from .ndk_parser import parse_ndk_string
@@ -189,7 +190,7 @@ def min_dens(zoom, scale=1.5):
 
 
 def add_min_zoom(eq_list, bin_size_degrees=1., zoom_scale=1.5, 
-                 min_zoom=1, max_zoom=12):
+                 min_zoom=1, max_zoom=15):
     '''
     Calculates the minimum zoom threshold for each earthquake to appear in
     the GMCT Viewer based on the regional earthquake density and the 
