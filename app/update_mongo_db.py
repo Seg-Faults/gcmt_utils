@@ -46,6 +46,8 @@ def update_mongo_db(mongo_connection_uri=None,
                                        'geometry.coordinates' : 1,
                                        '_id' : 1} ))
 
+    logging.info('{} existing events'.format(len(existing_eqs)))
+
     names = [ee['properties']['Event'] for ee in existing_eqs] # don't need?
     dates = [ee['properties']['Datetime'] for ee in existing_eqs]
     min_zooms = [ee['properties']['minZoom'] for ee in existing_eqs]
@@ -57,7 +59,7 @@ def update_mongo_db(mongo_connection_uri=None,
     
     new_quick_cmts = [eq for eq in quick_cmt_list if eq.Datetime > last_date]
     del quick_cmt_list
-    #jnew_quick_cmts = quick_cmt_list
+    #new_quick_cmts = quick_cmt_list
     logging.info('{} new Quick CMTs'.format(len(new_quick_cmts)))
     #gc.make_beachballs(new_cmts)
     
@@ -75,7 +77,7 @@ def update_mongo_db(mongo_connection_uri=None,
     logging.info('Recalculating minZoom')
         
     if len(new_quick_cmts) > 0:
-        gc.add_min_zoom(list(eq_new_min_zoom), bin_size_degrees=1.5)
+        gc.add_min_zoom(all_eqs, bin_size_degrees=1.5)
         #logging.info('skipping...')
 
         logging.info('Updating minZooms for existing events')
