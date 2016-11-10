@@ -2,6 +2,7 @@ from urllib.request import urlopen
 import time
 import logging
 import argparse
+import numpy as np
 
 from pymongo import MongoClient
 
@@ -54,8 +55,9 @@ def update_mongo_db(mongo_connection_uri=None,
     logging.info('Processing Quick CMTs')
     quick_cmt_list = gc.process_quick_cmts()
     
-    #new_quick_cmts = [eq for eq in quick_cmt_list if eq.Datetime > last_date]
-    new_quick_cmts = quick_cmt_list
+    new_quick_cmts = [eq for eq in quick_cmt_list if eq.Datetime > last_date]
+    del quick_cmt_list
+    #jnew_quick_cmts = quick_cmt_list
     logging.info('{} new Quick CMTs'.format(len(new_quick_cmts)))
     #gc.make_beachballs(new_cmts)
     
@@ -65,31 +67,37 @@ def update_mongo_db(mongo_connection_uri=None,
     new_cmts = new_quick_cmts + new_monthly_cmts
 
     old_eqs = [gc.GCMT_event.from_feature_dict(ee) for ee in existing_eqs]
+    del existing_eqs
+
     all_eqs = old_eqs + new_cmts
 
+
     logging.info('Recalculating minZoom')
-    gc.add_min_zoom(all_eqs, bin_size_degrees=1.5)
+        
+    if len(new_quick_cmts) > 0:
+        gc.add_min_zoom(list(eq_new_min_zoom), bin_size_degrees=1.5)
+        #logging.info('skipping...')
 
-    logging.info('Updating minZooms for existing events')
-    updated_min_zooms = [oeq.minZoom for oeq in old_eqs]
+        logging.info('Updating minZooms for existing events')
+        updated_min_zooms = [oeq.minZoom for oeq in old_eqs]
 
-    updated_records = [(lambda i: ({'_id': ids[i]}, 
-                                   {'$set': 
-                                    {'properties.minZoom': new_min_zoom}}))(i)
-                       for i, new_min_zoom in enumerate(updated_min_zooms)
-                       if new_min_zoom != min_zooms[i]]
+        updated_records = [(lambda i: ({'_id': ids[i]}, 
+                                       {'$set': 
+                                        {'properties.minZoom': new_min_zoom}}))(i)
+                           for i, new_min_zoom in enumerate(updated_min_zooms)
+                           if new_min_zoom != min_zooms[i]]
 
-    update_record_results = [coll.update_one(*rc) for rc in updated_records]
+        update_record_results = [coll.update_one(*rc) for rc in updated_records]
 
-    good_updates = 0
-    bad_updates = []
-    for i, ur in enumerate(update_record_results):
-        if ur.raw_result['ok'] == 1:
-            good_updates += 1
-        else:
-            bad_updates.append(ids[i])
-    logging.info('Successfully updated {} records'.format(good_updates))
-    logging.info('{} unsuccessful updates: {}'.format(len(bad_updates),
+        good_updates = 0
+        bad_updates = []
+        for i, ur in enumerate(update_record_results):
+            if ur.raw_result['ok'] == 1:
+                good_updates += 1
+            else:
+                bad_updates.append(ids[i])
+        logging.info('Successfully updated {} records'.format(good_updates))
+        logging.info('{} unsuccessful updates: {}'.format(len(bad_updates),
                                                       bad_updates))
 
     logging.info('Adding new events')
